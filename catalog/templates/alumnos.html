@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Lista de Alumnos</title>
+    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css" rel="stylesheet" type="text/css">
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+    </style>
+</head>
+<body>
+
+    <h2>Directorio de Alumnos</h2>
+    <table id="tabla-alumnos" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>Matrícula</th>
+                <th>Nombre</th>
+                <th>Apellidos</th>
+                <th>Estatus</th>
+                <th>Semestre</th>
+                <th>Promedio</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for alumno in alumno_list %}
+            <tr>
+                <td>{{ alumno.matricula }}</td>
+                <td>{{ alumno.nombre }}</td>
+                <td>{{ alumno.apellidos }}</td>
+                <td>{{ alumno.get_estatus_display }}</td>
+                <td>{{ alumno.semestre }}</td>
+                <td>{{ alumno.promedio|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest" type="text/javascript"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const miTabla = document.querySelector("#tabla-alumnos");
+            
+            if (miTabla) {
+                new simpleDatatables.DataTable(miTabla, {
+                    searchable: true,
+                    fixedHeight: true,
+                    labels: {
+                        placeholder: "Buscar alumno...",
+                        perPage: "registros por página",
+                        noRows: "No se encontraron registros",
+                        info: "Mostrando del {start} al {end} de {rows} registros",
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

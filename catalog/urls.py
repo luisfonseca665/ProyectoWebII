@@ -16,10 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-
 from catalog.views import AlumnoListView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('alumnos/', AlumnoListView.as_view(), name='alumnos')
+   path('alumnos/', AlumnoListView.as_view(), name='alumnos')
 ]
