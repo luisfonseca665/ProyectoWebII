@@ -1,0 +1,49 @@
+{% extends "pagina_maestra.html" %}
+{% block title %}Detalle del Profesor{% endblock %}
+{% block content %}
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-success text-white">
+        <h4 class="mb-0"><i class="bi bi-person-video3 me-2"></i> Prof. {{ object.nombre }} {{ object.apellidos }}</h4>
+    </div>
+    <div class="card-body row">
+        <div class="col-md-6">
+            <p><strong>Número de Empleado:</strong> {{ object.numero_empleado }}</p>
+            <p><strong>Correo Electrónico:</strong> <a href="mailto:{{ object.email }}" class="text-success-custom">{{ object.email }}</a></p>
+        </div>
+        <div class="col-md-6">
+            <p><strong>Especialidad:</strong> {{ object.especialidad }}</p>
+        </div>
+    </div>
+    <div class="card-footer bg-white">
+        <a href="{% url 'profesor-update' object.numero_empleado %}" class="btn btn-warning btn-sm"><i class="bi bi-pencil me-1"></i> Editar</a>
+    </div>
+</div>
+
+<h4 class="text-success-custom fw-bold mt-4 mb-3">Grupos Asignados</h4>
+<div class="table-responsive bg-white rounded shadow-sm p-2">
+    <table class="table datatable table-bordered table-hover align-middle mb-0">
+        <thead class="table-success">
+            <tr>
+                <th>Materia</th>
+                <th>Clave Grupo</th>
+                <th>Horario</th>
+                <th>Alumnos Inscritos</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for grupo in object.grupos.all %}
+            <tr>
+                <td><a href="{{ grupo.materia.get_absolute_url }}" class="text-success-custom fw-bold text-decoration-none">{{ grupo.materia.nombre }}</a></td>
+                <td><a href="{{ grupo.get_absolute_url }}" class="text-success-custom text-decoration-none">{{ grupo.clave }}</a></td>
+                <td>{{ grupo.horario }}</td>
+                <td>{{ grupo.numAlumnos }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center py-3">El profesor no tiene grupos asignados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

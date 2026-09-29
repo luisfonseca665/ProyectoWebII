@@ -79,7 +79,7 @@ DATABASES = {
 
     'NAME': 'sicenet2',
     'USER': 'root',
-    'PASSWORD': '1111',
+    'PASSWORD': 'root',
     'HOST': 'localhost',
     'PORT': '3306',
     }

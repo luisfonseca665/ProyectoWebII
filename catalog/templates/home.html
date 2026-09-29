@@ -1,0 +1,49 @@
+{% extends "pagina_maestra.html" %}
+
+{% block title %}Inicio - Control Escolar{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h3 class="fw-bold text-success-custom mb-1">Sistema Integral de Control Escolar</h3>
+    <p class="text-muted fs-6 mb-0">Bienvenido al panel de administración. Aquí podrás gestionar los catálogos principales de la institución educativa.</p>
+</div>
+
+<div class="row text-center mt-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-white shadow-sm" style="border: 1px solid #000;">
+            <div class="card-header bg-white fw-bold text-success-custom border-bottom" style="border-color: #000 !important;">Alumnos Registrados</div>
+            <div class="card-body">
+              <h2 class="card-title text-dark fw-bold mb-3">{{ num_alumnos }}</h2>
+              <a href="{% url 'alumnos' %}" class="btn btn-outline-success btn-sm">Ver Lista</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-white shadow-sm" style="border: 1px solid #000;">
+            <div class="card-header bg-white fw-bold text-success-custom border-bottom" style="border-color: #000 !important;">Profesores Activos</div>
+            <div class="card-body">
+              <h2 class="card-title text-dark fw-bold mb-3">{{ num_profesores }}</h2>
+              <a href="{% url 'profesores' %}" class="btn btn-outline-success btn-sm">Ver Lista</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-white shadow-sm" style="border: 1px solid #000;">
+            <div class="card-header bg-white fw-bold text-success-custom border-bottom" style="border-color: #000 !important;">Grupos Creados</div>
+            <div class="card-body">
+              <h2 class="card-title text-dark fw-bold mb-3">{{ num_grupos }}</h2>
+              <a href="{% url 'grupos' %}" class="btn btn-outline-success btn-sm">Ver Lista</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-white shadow-sm" style="border: 1px solid #000;">
+            <div class="card-header bg-white fw-bold text-success-custom border-bottom" style="border-color: #000 !important;">Carreras Ofertadas</div>
+            <div class="card-body">
+              <h2 class="card-title text-dark fw-bold mb-3">{{ num_carreras }}</h2>
+              <a href="{% url 'carreras' %}" class="btn btn-outline-success btn-sm">Ver Lista</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

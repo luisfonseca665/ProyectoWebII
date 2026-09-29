@@ -1,0 +1,14 @@
+{% extends "pagina_maestra.html" %}
+{% block title %}Confirmar Eliminación{% endblock %}
+{% block content %}
+<div class="alert alert-danger" role="alert">
+  <h4 class="alert-heading">¿Estás seguro?</h4>
+  <p>Estás a punto de eliminar el registro: <strong>{{ object }}</strong>. Esta acción no se puede deshacer.</p>
+  <hr>
+  <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Sí, Eliminar</button>
+      <a href="javascript:history.back()" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

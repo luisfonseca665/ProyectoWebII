@@ -1,0 +1,17 @@
+{% extends "pagina_maestra.html" %}
+{% block title %}Formulario{% endblock %}
+{% block content %}
+<div class="card mx-auto" style="max-width: 600px;">
+    <div class="card-header bg-success text-white">
+        <h5>Formulario de Registro / Edición</h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-success">Guardar</button>
+            <a href="javascript:history.back()" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

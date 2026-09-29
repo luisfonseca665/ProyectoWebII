@@ -1,9 +1,9 @@
-import json
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
-from django.core.exceptions import ValidationError
-from django.shortcuts import render, get_object_or_404
+import os
+
+base_dir = r"c:\Users\garci\Documentos\ITSUR\7 Semestre\Programacion Web II\ProyectoWebII\catalog"
+
+# 1. Update views.py
+views_content = """from django.shortcuts import render, get_object_or_404
 from django.urls import reverse_lazy
 from django.http import HttpResponse
 from django.views.generic import TemplateView, ListView, DetailView, CreateView, UpdateView, DeleteView
@@ -164,30 +164,141 @@ def exportar_kardex_excel(request, pk):
     response['Content-Disposition'] = f'attachment; filename="Kardex_{alumno.matricula}.xlsx"'
     wb.save(response)
     return response
+"""
 
-@require_POST
-def actualizar_calificaciones(request, pk):
-    try:
-        data = json.loads(request.body)
-        alumno = get_object_or_404(Alumno, pk=pk)
-        calificaciones = data.get('calificaciones', [])
-        
-        for item in calificaciones:
-            calif_id = item.get('id')
-            nueva_calificacion = item.get('calificacion')
-            
-            # Validation
-            if nueva_calificacion is None or nueva_calificacion == '':
-                return JsonResponse({'success': False, 'error': 'La calificación no puede ser nula o vacía.'}, status=400)
-            
-            nueva_calificacion = float(nueva_calificacion)
-            if nueva_calificacion < 0 or nueva_calificacion > 100:
-                return JsonResponse({'success': False, 'error': 'La calificación debe estar entre 0 y 100.'}, status=400)
-                
-            calificacion_obj = Calificacion.objects.get(id=calif_id, alumno=alumno)
-            calificacion_obj.calificacion_final = nueva_calificacion
-            calificacion_obj.save()
-            
-        return JsonResponse({'success': True})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+with open(os.path.join(base_dir, 'views.py'), 'w', encoding='utf-8') as f:
+    f.write(views_content)
+
+# 2. Update urls.py
+urls_content = """from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.HomeView.as_view(), name='home'),
+    
+    path('carreras/', views.CarreraListView.as_view(), name='carreras'),
+    path('carreras/nueva/', views.CarreraCreateView.as_view(), name='carrera-create'),
+    path('carreras/<int:pk>/', views.CarreraDetailView.as_view(), name='carrera-detail'),
+    path('carreras/<int:pk>/editar/', views.CarreraUpdateView.as_view(), name='carrera-update'),
+    path('carreras/<int:pk>/eliminar/', views.CarreraDeleteView.as_view(), name='carrera-delete'),
+
+    path('materias/', views.MateriaListView.as_view(), name='materias'),
+    path('materias/nueva/', views.MateriaCreateView.as_view(), name='materia-create'),
+    path('materias/<int:pk>/', views.MateriaDetailView.as_view(), name='materia-detail'),
+    path('materias/<int:pk>/editar/', views.MateriaUpdateView.as_view(), name='materia-update'),
+    path('materias/<int:pk>/eliminar/', views.MateriaDeleteView.as_view(), name='materia-delete'),
+
+    path('alumnos/', views.AlumnoListView.as_view(), name='alumnos'),
+    path('alumnos/nuevo/', views.AlumnoCreateView.as_view(), name='alumno-create'),
+    path('alumnos/<str:pk>/', views.AlumnoDetailView.as_view(), name='alumno-detail'),
+    path('alumnos/<str:pk>/editar/', views.AlumnoUpdateView.as_view(), name='alumno-update'),
+    path('alumnos/<str:pk>/eliminar/', views.AlumnoDeleteView.as_view(), name='alumno-delete'),
+    path('alumnos/<str:pk>/exportar-kardex/', views.exportar_kardex_excel, name='alumno-exportar-kardex'),
+
+    path('profesores/', views.ProfesorListView.as_view(), name='profesores'),
+    path('profesores/nuevo/', views.ProfesorCreateView.as_view(), name='profesor-create'),
+    path('profesores/<str:pk>/', views.ProfesorDetailView.as_view(), name='profesor-detail'),
+    path('profesores/<str:pk>/editar/', views.ProfesorUpdateView.as_view(), name='profesor-update'),
+    path('profesores/<str:pk>/eliminar/', views.ProfesorDeleteView.as_view(), name='profesor-delete'),
+
+    path('grupos/', views.GrupoListView.as_view(), name='grupos'),
+    path('grupos/nuevo/', views.GrupoCreateView.as_view(), name='grupo-create'),
+    path('grupos/<int:pk>/', views.GrupoDetailView.as_view(), name='grupo-detail'),
+    path('grupos/<int:pk>/editar/', views.GrupoUpdateView.as_view(), name='grupo-update'),
+    path('grupos/<int:pk>/eliminar/', views.GrupoDeleteView.as_view(), name='grupo-delete'),
+]
+"""
+
+with open(os.path.join(base_dir, 'urls.py'), 'w', encoding='utf-8') as f:
+    f.write(urls_content)
+
+# 3. Update alumno_detail.html to include Excel button
+alumno_detail = """{% extends "pagina_maestra.html" %}
+{% block title %}Detalle del Alumno{% endblock %}
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h4 class="mb-0"><i class="bi bi-person-badge"></i> {{ object.apellidos }} {{ object.nombre }}</h4>
+        <a href="{% url 'alumno-exportar-kardex' object.matricula %}" class="btn btn-success btn-sm">
+            <i class="bi bi-file-earmark-excel-fill"></i> Exportar Kardex a Excel
+        </a>
+    </div>
+    <div class="card-body row">
+        <div class="col-md-6">
+            <p><strong>Matrícula:</strong> {{ object.matricula }}</p>
+            <p><strong>Carrera:</strong> {{ object.carrera.nombre }}</p>
+        </div>
+        <div class="col-md-6">
+            <p><strong>Estatus:</strong> {{ object.get_estatus_display }}</p>
+            <p><strong>Semestre:</strong> {{ object.semestre }}</p>
+        </div>
+    </div>
+    <div class="card-footer">
+        <a href="{% url 'alumno-update' object.matricula %}" class="btn btn-warning btn-sm">Editar</a>
+        <a href="{% url 'alumnos' %}" class="btn btn-secondary btn-sm">Regresar a la lista</a>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mt-4 mb-2">
+    <h4>Kardex / Calificaciones</h4>
+    <a href="{% url 'alumno-exportar-kardex' object.matricula %}" class="btn btn-outline-success btn-sm">
+        <i class="bi bi-download"></i> Descargar Reporte (.xlsx)
+    </a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Código</th>
+                <th>Materia</th>
+                <th>Grupo</th>
+                <th>Profesor</th>
+                <th>Calificación Final</th>
+                <th>Estatus</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cal in calificaciones %}
+            <tr>
+                <td>{{ cal.grupo.materia.codigo }}</td>
+                <td>{{ cal.grupo.materia.nombre }}</td>
+                <td>{{ cal.grupo.clave }}</td>
+                <td>{{ cal.grupo.profesor|default:"-" }}</td>
+                <td>
+                    {% if cal.calificacion_final %}
+                        {% if cal.calificacion_final < 70 %}
+                            <span class="text-danger fw-bold">{{ cal.calificacion_final }}</span>
+                        {% else %}
+                            <span class="text-success fw-bold">{{ cal.calificacion_final }}</span>
+                        {% endif %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if cal.calificacion_final %}
+                        {% if cal.calificacion_final >= 70 %}
+                            <span class="badge text-bg-success">Aprobado</span>
+                        {% else %}
+                            <span class="badge text-bg-danger">Reprobado</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge text-bg-secondary">Cursando</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center">El alumno no cuenta con calificaciones registradas.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}"""
+
+with open(os.path.join(base_dir, 'templates', 'catalog', 'alumno_detail.html'), 'w', encoding='utf-8') as f:
+    f.write(alumno_detail)
+
+print("Exportación a Excel y vista Kardex actualizados.")
