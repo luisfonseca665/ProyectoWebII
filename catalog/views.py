@@ -3,16 +3,33 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.core.exceptions import ValidationError
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.http import HttpResponse
 from django.views.generic import TemplateView, ListView, DetailView, CreateView, UpdateView, DeleteView
 from .models import Carrera, Materia, Alumno, Profesor, Grupo, Calificacion
 from django.db.models import Avg, Count
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.decorators import login_required, user_passes_test
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 
-class HomeView(TemplateView):
+# --- MIXINS DE ROLES ---
+class AdminRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.groups.filter(name='Administrador').exists() or self.request.user.is_superuser
+
+class CoordinadorRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.groups.filter(name='Coordinador').exists() or self.request.user.is_superuser
+
+class EstudianteRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.groups.filter(name='Estudiante').exists()
+
+# --- VISTAS GENERALES ---
+class HomeView(LoginRequiredMixin, TemplateView):
     template_name = 'home.html'
 
     def get_context_data(self, **kwargs):
@@ -24,27 +41,27 @@ class HomeView(TemplateView):
         return context
 
 # --- CARRERA ---
-class CarreraListView(ListView): model = Carrera; template_name = 'carrera_list.html'
-class CarreraDetailView(DetailView): model = Carrera; template_name = 'catalog/carrera_detail.html'
-class CarreraCreateView(CreateView): model = Carrera; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('carreras')
-class CarreraUpdateView(UpdateView): model = Carrera; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('carreras')
-class CarreraDeleteView(DeleteView): model = Carrera; success_url = reverse_lazy('carreras'); template_name = 'confirm_delete.html'
+class CarreraListView(LoginRequiredMixin, ListView): model = Carrera; template_name = 'carrera_list.html'
+class CarreraDetailView(LoginRequiredMixin, DetailView): model = Carrera; template_name = 'catalog/carrera_detail.html'
+class CarreraCreateView(LoginRequiredMixin, AdminRequiredMixin, CreateView): model = Carrera; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('carreras')
+class CarreraUpdateView(LoginRequiredMixin, AdminRequiredMixin, UpdateView): model = Carrera; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('carreras')
+class CarreraDeleteView(LoginRequiredMixin, AdminRequiredMixin, DeleteView): model = Carrera; success_url = reverse_lazy('carreras'); template_name = 'confirm_delete.html'
 
 # --- MATERIA ---
-class MateriaListView(ListView): model = Materia; template_name = 'materia_list.html'
-class MateriaDetailView(DetailView): model = Materia; template_name = 'catalog/materia_detail.html'
-class MateriaCreateView(CreateView): model = Materia; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('materias')
-class MateriaUpdateView(UpdateView): model = Materia; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('materias')
-class MateriaDeleteView(DeleteView): model = Materia; success_url = reverse_lazy('materias'); template_name = 'confirm_delete.html'
+class MateriaListView(LoginRequiredMixin, ListView): model = Materia; template_name = 'materia_list.html'
+class MateriaDetailView(LoginRequiredMixin, DetailView): model = Materia; template_name = 'catalog/materia_detail.html'
+class MateriaCreateView(LoginRequiredMixin, AdminRequiredMixin, CreateView): model = Materia; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('materias')
+class MateriaUpdateView(LoginRequiredMixin, AdminRequiredMixin, UpdateView): model = Materia; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('materias')
+class MateriaDeleteView(LoginRequiredMixin, AdminRequiredMixin, DeleteView): model = Materia; success_url = reverse_lazy('materias'); template_name = 'confirm_delete.html'
 
 # --- ALUMNO ---
-class AlumnoListView(ListView):
+class AlumnoListView(LoginRequiredMixin, ListView):
     model = Alumno
     template_name = 'alumno_list.html'
     def get_queryset(self):
         return Alumno.objects.annotate(promedio=Avg('calificacion__calificacion_final'))
 
-class AlumnoDetailView(DetailView): 
+class AlumnoDetailView(LoginRequiredMixin, DetailView): 
     model = Alumno
     template_name = 'catalog/alumno_detail.html'
     def get_context_data(self, **kwargs):
@@ -52,26 +69,79 @@ class AlumnoDetailView(DetailView):
         context['calificaciones'] = Calificacion.objects.filter(alumno=self.object).select_related('grupo__materia', 'grupo__profesor')
         return context
 
-class AlumnoCreateView(CreateView): model = Alumno; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('alumnos')
-class AlumnoUpdateView(UpdateView): model = Alumno; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('alumnos')
-class AlumnoDeleteView(DeleteView): model = Alumno; success_url = reverse_lazy('alumnos'); template_name = 'confirm_delete.html'
+class AlumnoCreateView(LoginRequiredMixin, AdminRequiredMixin, CreateView): model = Alumno; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('alumnos')
+class AlumnoUpdateView(LoginRequiredMixin, AdminRequiredMixin, UpdateView): model = Alumno; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('alumnos')
+class AlumnoDeleteView(LoginRequiredMixin, AdminRequiredMixin, DeleteView): model = Alumno; success_url = reverse_lazy('alumnos'); template_name = 'confirm_delete.html'
 
 # --- PROFESOR ---
-class ProfesorListView(ListView): model = Profesor; template_name = 'profesor_list.html'
-class ProfesorDetailView(DetailView): model = Profesor; template_name = 'catalog/profesor_detail.html'
-class ProfesorCreateView(CreateView): model = Profesor; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('profesores')
-class ProfesorUpdateView(UpdateView): model = Profesor; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('profesores')
-class ProfesorDeleteView(DeleteView): model = Profesor; success_url = reverse_lazy('profesores'); template_name = 'confirm_delete.html'
+class ProfesorListView(LoginRequiredMixin, ListView): model = Profesor; template_name = 'profesor_list.html'
+class ProfesorDetailView(LoginRequiredMixin, DetailView): model = Profesor; template_name = 'catalog/profesor_detail.html'
+class ProfesorCreateView(LoginRequiredMixin, AdminRequiredMixin, CreateView): model = Profesor; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('profesores')
+class ProfesorUpdateView(LoginRequiredMixin, AdminRequiredMixin, UpdateView): model = Profesor; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('profesores')
+class ProfesorDeleteView(LoginRequiredMixin, AdminRequiredMixin, DeleteView): model = Profesor; success_url = reverse_lazy('profesores'); template_name = 'confirm_delete.html'
 
 # --- GRUPO ---
-class GrupoListView(ListView): model = Grupo; template_name = 'grupo_list.html'
-class GrupoDetailView(DetailView): model = Grupo; template_name = 'catalog/grupo_detail.html'
-class GrupoCreateView(CreateView): model = Grupo; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('grupos')
-class GrupoUpdateView(UpdateView): model = Grupo; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('grupos')
-class GrupoDeleteView(DeleteView): model = Grupo; success_url = reverse_lazy('grupos'); template_name = 'confirm_delete.html'
+class GrupoListView(LoginRequiredMixin, ListView): model = Grupo; template_name = 'grupo_list.html'
+class GrupoDetailView(LoginRequiredMixin, DetailView): model = Grupo; template_name = 'catalog/grupo_detail.html'
+class GrupoCreateView(LoginRequiredMixin, CoordinadorRequiredMixin, CreateView): model = Grupo; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('grupos')
+class GrupoUpdateView(LoginRequiredMixin, CoordinadorRequiredMixin, UpdateView): model = Grupo; fields = '__all__'; template_name = 'form_generico.html'; success_url = reverse_lazy('grupos')
+class GrupoDeleteView(LoginRequiredMixin, CoordinadorRequiredMixin, DeleteView): model = Grupo; success_url = reverse_lazy('grupos'); template_name = 'confirm_delete.html'
 
+# --- CARGA ACADÉMICA E INSCRIPCIÓN ---
+class CargaAcademicaView(LoginRequiredMixin, ListView):
+    model = Calificacion
+    template_name = 'carga_academica.html'
+    context_object_name = 'inscripciones'
+
+    def get_queryset(self):
+        if self.request.user.groups.filter(name='Estudiante').exists():
+            return Calificacion.objects.filter(alumno__usuario=self.request.user, calificacion_final__isnull=True)
+        
+        matricula = self.kwargs.get('matricula')
+        if matricula and self.request.user.groups.filter(name='Coordinador').exists():
+            return Calificacion.objects.filter(alumno__matricula=matricula, calificacion_final__isnull=True)
+        
+        return Calificacion.objects.none()
+
+class InscripcionMateriasView(LoginRequiredMixin, TemplateView):
+    template_name = 'inscripcion.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.groups.filter(name='Estudiante').exists():
+            self.alumno = get_object_or_404(Alumno, usuario=request.user)
+            if Calificacion.objects.filter(alumno=self.alumno, calificacion_final__isnull=True).exists():
+                messages.warning(request, "Ya tienes una carga académica activa.")
+                return redirect('carga-academica')
+                
+        elif request.user.groups.filter(name='Coordinador').exists():
+            matricula = self.kwargs.get('matricula')
+            self.alumno = get_object_or_404(Alumno, matricula=matricula)
+        else:
+            return self.handle_no_permission()
+            
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['grupos_disponibles'] = Grupo.objects.filter(materia__carrera=self.alumno.carrera)
+        context['alumno'] = self.alumno
+        return context
+
+    def post(self, request, *args, **kwargs):
+        grupos_ids = request.POST.getlist('grupos')
+        for grupo_id in grupos_ids:
+            grupo = get_object_or_404(Grupo, id=grupo_id)
+            Calificacion.objects.get_or_create(alumno=self.alumno, grupo=grupo)
+            grupo.numAlumnos += 1
+            grupo.save()
+            
+        messages.success(request, "Inscripción realizada con éxito.")
+        if request.user.groups.filter(name='Estudiante').exists():
+            return redirect('carga-academica')
+        return redirect('carga-academica-coordinador', matricula=self.alumno.matricula)
 
 # --- VISTA EXPORTACIÓN EXCEL ---
+@login_required
 def exportar_kardex_excel(request, pk):
     alumno = get_object_or_404(Alumno, pk=pk)
     calificaciones = Calificacion.objects.filter(alumno=alumno).select_related('grupo__materia', 'grupo__profesor')
@@ -165,7 +235,12 @@ def exportar_kardex_excel(request, pk):
     wb.save(response)
     return response
 
+
+def es_coordinador(user):
+    return user.groups.filter(name='Coordinador').exists() or user.is_superuser
+
 @require_POST
+@user_passes_test(es_coordinador)
 def actualizar_calificaciones(request, pk):
     try:
         data = json.loads(request.body)
@@ -191,3 +266,43 @@ def actualizar_calificaciones(request, pk):
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+class ProfesorRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.groups.filter(name='Profesor').exists() or self.request.user.is_superuser
+
+# --- VISTAS EXCLUSIVAS DEL PROFESOR ---
+class MisGruposView(LoginRequiredMixin, ProfesorRequiredMixin, ListView):
+    """Muestra los grupos asignados al profesor autenticado."""
+    model = Grupo
+    template_name = 'mis_grupos.html'
+    context_object_name = 'grupos'
+
+    def get_queryset(self):
+        return Grupo.objects.filter(profesor__usuario=self.request.user)
+
+class CapturarCalificacionesView(LoginRequiredMixin, ProfesorRequiredMixin, DetailView):
+    """Permite al profesor capturar calificaciones finales de su grupo."""
+    model = Grupo
+    template_name = 'capturar_calificaciones.html'
+    context_object_name = 'grupo'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Traemos a los alumnos inscritos ordenados por apellidos
+        context['calificaciones'] = Calificacion.objects.filter(grupo=self.object).select_related('alumno').order_by('alumno__apellidos', 'alumno__nombre')
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        calificaciones = Calificacion.objects.filter(grupo=self.object)
+        
+        for calif in calificaciones:
+            # El input del html tendrá el name="calificacion_1", "calificacion_2", etc.
+            valor = request.POST.get(f'calificacion_{calif.id}')
+            if valor:
+                calif.calificacion_final = float(valor)
+                calif.save()
+                
+        messages.success(request, f"Calificaciones del grupo {self.object.clave} guardadas exitosamente.")
+        return redirect('mis-grupos')

@@ -1,0 +1,78 @@
+{% extends 'pagina_maestra.html' %}
+
+{% block title %}Inscripción de Materias - SICE{% endblock %}
+
+{% block content %}
+<div class="mb-4 border-bottom pb-2">
+    <h2 class="text-success-custom fw-bold"><i class="bi bi-ui-checks"></i> Selección de Grupos</h2>
+    <p class="text-muted">Alumno: <strong>{{ alumno.nombre }} {{ alumno.apellidos }}</strong> | Matrícula: <strong>{{ alumno.matricula }}</strong></p>
+</div>
+
+<form method="POST">
+    {% csrf_token %}
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-success-custom text-white py-3">
+            <h5 class="mb-0">Oferta Académica: {{ alumno.carrera.nombre }}</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Inscribir</th>
+                            <th>Materia</th>
+                            <th>Grupo</th>
+                            <th>Profesor</th>
+                            <th>Horario</th>
+                            <th>Cupo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for grupo in grupos_disponibles %}
+                        <tr>
+                            <td class="ps-4">
+                                {% if grupo.numAlumnos < grupo.cupo %}
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input border-success" type="checkbox" name="grupos" value="{{ grupo.id }}" id="grupo_{{ grupo.id }}" style="cursor: pointer;">
+                                </div>
+                                {% else %}
+                                <span class="badge bg-danger rounded-pill">Lleno</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <label for="grupo_{{ grupo.id }}" class="form-label mb-0" style="cursor: pointer;">
+                                    {{ grupo.materia.nombre }}
+                                </label>
+                            </td>
+                            <td>{{ grupo.clave }}</td>
+                            <td>{{ grupo.profesor|default:"<span class='text-muted fst-italic'>Pendiente</span>"|safe }}</td>
+                            <td>{{ grupo.horario }}</td>
+                            <td>
+                                <div class="progress" style="height: 20px; min-width: 100px;">
+                                    <!-- Calcula el porcentaje de cupo para la barra (requeriría un template tag en un proyecto real, pero visualmente ayuda) -->
+                                    <div class="progress-bar {% if grupo.numAlumnos >= grupo.cupo %}bg-danger{% else %}bg-success{% endif %}" 
+                                         role="progressbar" style="width: 100%;">
+                                        {{ grupo.numAlumnos }} / {{ grupo.cupo }}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                No hay grupos abiertos para tu carrera en este momento.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="d-flex justify-content-end mb-5">
+        <a href="javascript:history.back()" class="btn btn-secondary me-2">Cancelar</a>
+        <button type="submit" class="btn btn-success fw-bold"><i class="bi bi-save me-1"></i> Procesar Inscripción</button>
+    </div>
+</form>
+{% endblock %}

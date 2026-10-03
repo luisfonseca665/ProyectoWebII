@@ -1,0 +1,38 @@
+{% extends 'pagina_maestra.html' %}
+
+{% block title %}Iniciar Sesión - SICE{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-success-custom text-white text-center py-3">
+                <h4 class="mb-0"><i class="bi bi-person-circle me-2"></i>Acceso al Sistema</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <!-- Renderizado de errores -->
+                    {% if form.errors %}
+                        <div class="alert alert-danger shadow-sm">Usuario o contraseña incorrectos.</div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label fw-bold">Usuario</label>
+                        <input type="text" name="username" class="form-control focus-ring focus-ring-success" id="id_username" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="id_password" class="form-label fw-bold">Contraseña</label>
+                        <input type="password" name="password" class="form-control focus-ring focus-ring-success" id="id_password" required>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success"><i class="bi bi-box-arrow-in-right"></i> Entrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

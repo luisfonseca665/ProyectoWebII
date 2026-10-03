@@ -1,6 +1,7 @@
 from django.db import models
 from django.urls import reverse
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.contrib.auth.models import User # NUEVO IMPORTE
 
 class Carrera(models.Model):
     """Modelo que representa una carrera universitaria."""
@@ -52,6 +53,9 @@ class Alumno(models.Model):
         ('E', 'Egresado'),
     )
     
+    # NUEVO CAMPO PARA AUTENTICACIÓN
+    usuario = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='alumno_perfil')
+    
     matricula = models.CharField(max_length=20, unique=True, primary_key=True)
     carrera = models.ForeignKey('Carrera', on_delete=models.RESTRICT, related_name='alumnos')
     nombre = models.CharField(max_length=100)
@@ -75,6 +79,7 @@ class Alumno(models.Model):
 
 class Profesor(models.Model):
     """Modelo que representa a un profesor de la institución."""
+    usuario = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='profesor_perfil')
     numero_empleado = models.CharField(
         max_length=20, 
         unique=True, 

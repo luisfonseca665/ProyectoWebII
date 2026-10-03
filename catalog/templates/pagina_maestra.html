@@ -30,25 +30,67 @@
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          
+          <!-- Enlaces de Navegación Izquierda -->
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item">
               <a class="nav-link text-white" aria-current="page" href="{% url 'home' %}">Inicio</a>
             </li>
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                Catálogos
-              </a>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="{% url 'alumnos' %}">Alumnos</a></li>
-                <li><a class="dropdown-item" href="{% url 'profesores' %}">Profesores</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="{% url 'carreras' %}">Carreras</a></li>
-                <li><a class="dropdown-item" href="{% url 'materias' %}">Materias</a></li>
-                <li><a class="dropdown-item" href="{% url 'grupos' %}">Grupos</a></li>
-              </ul>
-            </li>
+            
+            {% if user.is_authenticated %}
+                <!-- Opción visible solo para Estudiantes -->
+                {% if request.user.groups.all.0.name == 'Estudiante' %}
+                <li class="nav-item">
+                  <a class="nav-link text-white" href="{% url 'carga-academica' %}">Mi Carga Académica</a>
+                </li>
+                {% endif %}
+
+                <!-- Opción visible solo para Profesores -->
+                {% if request.user.groups.all.0.name == 'Profesor' %}
+                <li class="nav-item">
+                  <a class="nav-link text-white" href="{% url 'mis-grupos' %}">Mis Grupos</a>
+                </li>
+                {% endif %}
+
+                <!-- Opción visible solo para Administradores y Coordinadores -->
+                {% if request.user.is_superuser or request.user.groups.all.0.name == 'Administrador' or request.user.groups.all.0.name == 'Coordinador' %}
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Catálogos
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'alumnos' %}">Alumnos</a></li>
+                    <li><a class="dropdown-item" href="{% url 'profesores' %}">Profesores</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'carreras' %}">Carreras</a></li>
+                    <li><a class="dropdown-item" href="{% url 'materias' %}">Materias</a></li>
+                    <li><a class="dropdown-item" href="{% url 'grupos' %}">Grupos</a></li>
+                  </ul>
+                </li>
+                {% endif %}
+            {% endif %}
           </ul>
           
+          <!-- Controles de Usuario Derecha -->
+          <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+              {% if user.is_authenticated %}
+                  <li class="nav-item me-3 d-none d-lg-block">
+                      <span class="text-white"><i class="bi bi-person-circle"></i> {{ user.username }} 
+                      <small class="fw-light fst-italic">({{ request.user.groups.all.0.name|default:"Admin" }})</small></span>
+                  </li>
+                  <li class="nav-item">
+                      <form action="{% url 'logout' %}" method="post" class="d-inline">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-outline-light btn-sm">Cerrar Sesión</button>
+                      </form>
+                  </li>
+              {% else %}
+                  <li class="nav-item">
+                      <a href="{% url 'login' %}" class="btn btn-outline-light btn-sm">Iniciar Sesión</a>
+                  </li>
+              {% endif %}
+          </ul>
+
         </div>
       </div>
     </nav>

@@ -1,9 +1,20 @@
 from django.urls import path
+from django.contrib.auth.views import LoginView, LogoutView
 from . import views
 
 urlpatterns = [
+    # Autenticación
+    path('login/', LoginView.as_view(template_name='login.html'), name='login'),
+    path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
+
     path('', views.HomeView.as_view(), name='home'),
     
+    # Rutas Carga Académica e Inscripción
+    path('mi-carga/', views.CargaAcademicaView.as_view(), name='carga-academica'),
+    path('carga/<str:matricula>/', views.CargaAcademicaView.as_view(), name='carga-academica-coordinador'),
+    path('inscripcion/', views.InscripcionMateriasView.as_view(), name='inscripcion-estudiante'),
+    path('inscripcion/<str:matricula>/', views.InscripcionMateriasView.as_view(), name='inscripcion-coordinador'),
+
     path('carreras/', views.CarreraListView.as_view(), name='carreras'),
     path('carreras/nueva/', views.CarreraCreateView.as_view(), name='carrera-create'),
     path('carreras/<int:pk>/', views.CarreraDetailView.as_view(), name='carrera-detail'),
@@ -35,4 +46,6 @@ urlpatterns = [
     path('grupos/<int:pk>/', views.GrupoDetailView.as_view(), name='grupo-detail'),
     path('grupos/<int:pk>/editar/', views.GrupoUpdateView.as_view(), name='grupo-update'),
     path('grupos/<int:pk>/eliminar/', views.GrupoDeleteView.as_view(), name='grupo-delete'),
+    path('mis-grupos/', views.MisGruposView.as_view(), name='mis-grupos'),
+    path('grupo/<int:pk>/calificaciones/', views.CapturarCalificacionesView.as_view(), name='capturar-calificaciones'),
 ]
