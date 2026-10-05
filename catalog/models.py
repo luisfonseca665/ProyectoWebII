@@ -4,11 +4,11 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import User # NUEVO IMPORTE
 
 class Carrera(models.Model):
-    """Modelo que representa una carrera universitaria."""
+    """Modelo que representa una carrera"""
     codigo = models.CharField(
         max_length=20, 
         unique=True,
-        help_text="Código identificador de la carrera"
+        help_text="Id de la carrera"
     )
     nombre = models.CharField(
         max_length=40,
@@ -28,7 +28,7 @@ class Carrera(models.Model):
 
 
 class Materia(models.Model):
-    """Modelo que representa una materia perteneciente a una carrera."""
+    """Modelo que representa una materia"""
     carrera = models.ForeignKey('Carrera', on_delete=models.CASCADE, related_name='materias')
     codigo = models.CharField(max_length=20, unique=True)
     nombre = models.CharField(max_length=40)
@@ -45,15 +45,31 @@ class Materia(models.Model):
         return reverse('materia-detail', args=[str(self.id)])
 
 
+class Perfil(models.Model):
+    """Modelo que representa el perfil de cada usuario"""
+    ROLES = (
+        ('CONTROL_ESCOLAR', 'Control escolar'),
+        ('COORDINADOR', 'Coordinador'),
+        ('PROFESOR', 'Profesor'),
+        ('ALUMNO', 'Alumno'),
+    )
+
+    usuario = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='perfil')
+    rol = models.CharField(max_length=20, choices=ROLES)
+
+    def __str__(self):
+        username = self.usuario.username if self.usuario else 'Sin usuario'
+        return f"{username} - {self.get_rol_display()}"
+
+
 class Alumno(models.Model):
-    """Modelo que representa a un estudiante matriculado."""
-    ESTATUS_CHOICES = (
+    """Modelo que representa a un estudiante"""
+    ESTATUS = (
         ('A', 'Activo'),
         ('B', 'Baja'),
         ('E', 'Egresado'),
     )
     
-    # NUEVO CAMPO PARA AUTENTICACIÓN
     usuario = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='alumno_perfil')
     
     matricula = models.CharField(max_length=20, unique=True, primary_key=True)
@@ -62,7 +78,7 @@ class Alumno(models.Model):
     apellidos = models.CharField(max_length=150)
     estatus = models.CharField(
         max_length=1, 
-        choices=ESTATUS_CHOICES, 
+        choices=ESTATUS, 
         default='A'
     )
     semestre = models.PositiveIntegerField()
@@ -78,13 +94,19 @@ class Alumno(models.Model):
 
 
 class Profesor(models.Model):
-    """Modelo que representa a un profesor de la institución."""
+    """Modelo que representa a un profesor"""
+
+    ESTATUS = (
+        ('A', 'Activo'),
+        ('B', 'Baja')
+    )
+
     usuario = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='profesor_perfil')
     numero_empleado = models.CharField(
         max_length=20, 
         unique=True, 
         primary_key=True,
-        help_text="Número de nómina o identificador del docente"
+        help_text="Identificador del docente"
     )
     nombre = models.CharField(max_length=100)
     apellidos = models.CharField(max_length=150)
@@ -94,6 +116,11 @@ class Profesor(models.Model):
         blank=True,
         null=True,
         help_text="Ej. Ingeniería en Sistemas Computacionales, Ciencias Básicas"
+    )
+    estatus = models.CharField(
+        max_length=1,
+        choices=ESTATUS,
+        default='A'
     )
 
     class Meta:
@@ -108,7 +135,7 @@ class Profesor(models.Model):
 
 
 class Grupo(models.Model):
-    """Modelo que representa un grupo específico para una materia."""
+    """Modelo que representa un grupo"""
     materia = models.ForeignKey('Materia', on_delete=models.CASCADE, related_name='grupos')
     profesor = models.ForeignKey('Profesor', on_delete=models.SET_NULL, null=True, blank=True, related_name='grupos')
     clave = models.CharField(max_length=50)
