@@ -4,7 +4,11 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import User # NUEVO IMPORTE
 
 class Carrera(models.Model):
-    """Modelo que representa una carrera"""
+    """
+    Representa una carrera universitaria dentro del sistema.
+    Aquí guardamos la información básica como su nombre, la clave que la identifica,
+    y cuántos créditos y semestres dura en total.
+    """
     codigo = models.CharField(
         max_length=20, 
         unique=True,
@@ -21,14 +25,19 @@ class Carrera(models.Model):
         ordering = ['nombre']
 
     def __str__(self):
+        """Devuelve el nombre de la carrera para que sea fácil de identificar en los menús."""
         return self.nombre
 
     def get_absolute_url(self):
+        """Genera la ruta o enlace directo para ver los detalles de esta carrera en específico."""
         return reverse('carrera-detail', args=[str(self.id)])
 
 
 class Materia(models.Model):
-    """Modelo que representa una materia"""
+    """
+    Representa una materia que pertenece a una carrera.
+    Guarda los detalles académicos como las unidades temáticas y los créditos que aporta.
+    """
     carrera = models.ForeignKey('Carrera', on_delete=models.CASCADE, related_name='materias')
     codigo = models.CharField(max_length=20, unique=True)
     nombre = models.CharField(max_length=40)
@@ -39,9 +48,11 @@ class Materia(models.Model):
         ordering = ['nombre']
 
     def __str__(self):
+        """Muestra el código y el nombre de la materia (Ej. 'AED-1026 - Estructura de Datos')."""
         return f"{self.codigo} - {self.nombre}"
 
     def get_absolute_url(self):
+        """Devuelve la URL para acceder a la vista de detalles de esta materia."""
         return reverse('materia-detail', args=[str(self.id)])
 
 

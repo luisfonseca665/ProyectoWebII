@@ -22,6 +22,8 @@ import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 
 # --- MIXINS DE ROLES ---
+# Estos "mixins" son como los guardias de seguridad: revisan qué rol tienes antes 
+# de dejarte entrar a una vista. Si no tienes permisos, te regresan.
 class AdminRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         return self.request.user.groups.filter(name='Administrador').exists() or self.request.user.is_superuser
@@ -42,8 +44,13 @@ class ProfesorRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         return self.request.user.groups.filter(name='Profesor').exists() or self.request.user.is_superuser
 
-# --- VISTAS GENERALES ---
+# --- VISTAS EN GENERAL ---
+
 class HomeView(LoginRequiredMixin, TemplateView):
+    """
+    La pantalla principal del sistema. Aquí nada más sacamos la cuenta total 
+    de alumnos, profes, grupos y demás para mostrarlos en las tarjetitas del inicio.
+    """
     template_name = 'home.html'
 
     def get_context_data(self, **kwargs):
@@ -55,7 +62,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
         context['num_materias'] = Materia.objects.count()
         return context
 
-# --- SINCRONIZACIÓN AUTOMÁTICA DE USUARIOS ---
+# SINCRONIZACIÓN AUTOMÁTICA DE USUARIOS
 # Estas funciones nos ayudan a que cuando creemos un profesor o alumno en el sistema,
 # automáticamente se le cree su cuenta de Django (User) por debajo para que puedan iniciar sesión.
 def sincronizar_usuario_profesor(profesor):
@@ -418,6 +425,11 @@ class CargaAcademicaView(LoginRequiredMixin, ListView):
         return Calificacion.objects.none()
 
 class InscripcionMateriasView(LoginRequiredMixin, TemplateView):
+    """
+    Esta es de las vistas más importantes. Aquí manejamos cuando un alumno o un coordinador
+    intenta armar la carga académica (meter materias). Valida que no se pasen de créditos
+    y que no metan materias repetidas o ya pasadas.
+    """
     template_name = 'inscripcion.html'
 
     def dispatch(self, request, *args, **kwargs):
@@ -516,6 +528,10 @@ class InscripcionMateriasView(LoginRequiredMixin, TemplateView):
 # --- VISTA EXPORTACIÓN EXCEL ---
 @login_required
 def exportar_kardex_excel(request, pk):
+    """
+    Toma todas las calificaciones de un alumno y las formatea bonito en un archivo de Excel (.xlsx) 
+    para que Control Escolar o los coordinadores puedan descargarlo y tenerlo en físico/digital.
+    """
     alumno = get_object_or_404(Alumno, pk=pk)
     calificaciones = Calificacion.objects.filter(alumno=alumno).select_related('grupo__materia', 'grupo__profesor')
 
@@ -615,6 +631,10 @@ def es_coordinador(user):
 @require_POST
 @user_passes_test(es_coordinador)
 def actualizar_calificaciones(request, pk):
+    """
+    Ruta por donde se reciben datos en formato JSON para actualizar calificaciones 
+    rápidamente desde alguna tabla. (AJAX/Fetch API).
+    """
     try:
         data = json.loads(request.body)
         alumno = get_object_or_404(Alumno, pk=pk)
@@ -642,7 +662,10 @@ def actualizar_calificaciones(request, pk):
 
 # --- VISTAS EXCLUSIVAS DEL PROFESOR ---
 class MisGruposView(LoginRequiredMixin, ProfesorRequiredMixin, ListView):
-    """Muestra los grupos asignados al profesor autenticado."""
+    """
+    Lista todos los grupos que tiene asignado el profesor que inició sesión.
+    Básicamente es su pantalla de inicio.
+    """
     model = Grupo
     template_name = 'mis_grupos.html'
     context_object_name = 'grupos'
@@ -651,7 +674,10 @@ class MisGruposView(LoginRequiredMixin, ProfesorRequiredMixin, ListView):
         return Grupo.objects.filter(profesor__usuario=self.request.user)
 
 class CapturarCalificacionesView(LoginRequiredMixin, ProfesorRequiredMixin, DetailView):
-    """Permite al profesor capturar calificaciones finales de su grupo."""
+    """
+    Aquí es donde el profesor entra a un grupo en específico y le pone 
+    las calificaciones de 0 a 100 a todos los alumnos que están inscritos en él.
+    """
     model = Grupo
     template_name = 'capturar_calificaciones.html'
     context_object_name = 'grupo'

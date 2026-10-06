@@ -4,6 +4,10 @@ from .models import Carrera, Materia, Alumno, Profesor, Grupo, Perfil
 
 
 class RegistroUsuarioForm(forms.ModelForm):
+    """
+    Este formulario sirve para que los administradores puedan crear cuentas nuevas 
+    para otros administradores o coordinadores. 
+    """
     rol = forms.ChoiceField(
         choices=[('Administrador', 'Control Escolar (Administrador)'), ('Coordinador', 'Coordinador')],
         required=True, 
@@ -27,6 +31,10 @@ class RegistroUsuarioForm(forms.ModelForm):
         }
     
     def save(self, commit=True):
+        """
+        Sobrescribimos el guardado normal para encriptar la contraseña y 
+        asignarle de paso su perfil y sus permisos de grupo en Django.
+        """
         user = super().save(commit=False)
         user.set_password(self.cleaned_data['password'])
         if commit:
@@ -43,6 +51,10 @@ class RegistroUsuarioForm(forms.ModelForm):
 
 
 class CarreraForm(forms.ModelForm):
+    """
+    Formulario súper básico para dar de alta o editar una carrera.
+    Nada complejo, solo pide nombre, código, créditos y duración.
+    """
     class Meta:
         model = Carrera
         fields = ['codigo', 'nombre', 'creditos', 'duracion']
@@ -61,6 +73,9 @@ class CarreraForm(forms.ModelForm):
 
 
 class MateriaForm(forms.ModelForm):
+    """
+    Formulario para registrar una nueva materia y asignarla a una carrera.
+    """
     class Meta:
         model = Materia
         fields = ['carrera', 'codigo', 'nombre', 'unidades', 'creditos']
@@ -81,7 +96,11 @@ class MateriaForm(forms.ModelForm):
 
 
 class ProfesorCreateForm(forms.ModelForm):
-    """Formulario para dar de alta un profesor. Omite el usuario y estatus, asignándolos automáticamente."""
+    """
+    Formulario para registrar profes nuevos. 
+    Nota: no le pedimos el usuario ni la contraseña al registrarlo, de eso 
+    se encarga el sistema automáticamente por detrás.
+    """
     class Meta:
         model = Profesor
         fields = ['numero_empleado', 'nombre', 'apellidos', 'email', 'especialidad']
@@ -102,7 +121,10 @@ class ProfesorCreateForm(forms.ModelForm):
 
 
 class ProfesorUpdateForm(forms.ModelForm):
-    """Formulario para editar un profesor. El número de empleado no se modifica para preservar integridad."""
+    """
+    Formulario para cuando necesitas editar los datos de un profe.
+    Bloqueamos el número de empleado para que no vayan a romper la base de datos por accidente.
+    """
     numero_empleado = forms.CharField(
         label="Número de Empleado",
         disabled=True,
@@ -129,6 +151,10 @@ class ProfesorUpdateForm(forms.ModelForm):
 
 
 class AlumnoCleanMixin:
+    """
+    Este es un pequeño bloque de código reutilizable que verifica si el semestre
+    del alumno hace sentido con la duración de su carrera.
+    """
     def clean(self):
         cleaned_data = super().clean()
         semestre = cleaned_data.get('semestre')
@@ -144,7 +170,10 @@ class AlumnoCleanMixin:
 
 
 class AlumnoCreateForm(AlumnoCleanMixin, forms.ModelForm):
-    """Formulario para dar de alta un alumno. Omite el usuario y estatus, asignándolos automáticamente."""
+    """
+    Formulario para dar de alta alumnos de primer ingreso o que apenas registramos.
+    Al igual que los profes, el usuario y la contraseña se generan solitos.
+    """
     class Meta:
         model = Alumno
         fields = ['matricula', 'carrera', 'nombre', 'apellidos', 'semestre']
@@ -165,7 +194,10 @@ class AlumnoCreateForm(AlumnoCleanMixin, forms.ModelForm):
 
 
 class AlumnoUpdateForm(AlumnoCleanMixin, forms.ModelForm):
-    """Formulario para editar un alumno. La matrícula no se modifica para preservar integridad."""
+    """
+    Formulario para actualizar información de un estudiante.
+    La matrícula está desactivada para edición porque es la llave principal.
+    """
     matricula = forms.CharField(
         label="Matrícula",
         disabled=True,
