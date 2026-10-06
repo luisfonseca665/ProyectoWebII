@@ -9,26 +9,27 @@
     <table class="table datatable table-hover align-middle mb-0">
         <thead class="table-success">
             <tr>
-                <th>Clave</th><th>Materia</th><th>Profesor</th><th>Horario</th><th>Alumnos</th>
+                <th>Clave del Grupo</th>
+                <th>Materias Asignadas</th>
+                <th>Cupo Máximo</th>
                 <th class="text-center">Operaciones</th>
             </tr>
         </thead>
         <tbody>
-            {% for item in object_list %}
+            {% for item in grupos_agrupados %}
             <tr>
-                <td><a href="{{ item.get_absolute_url }}" class="text-success-custom fw-bold text-decoration-none">{{ item.clave }}</a></td>
-       <td>{{ item.materia.nombre }}</td>
-       <td>{{ item.profesor|default:"Sin asignar" }}</td>
-       <td>{{ item.horario }}</td>
-       <td>{{ item.numAlumnos }} / {{ item.cupo }}</td>
-       <td class="text-center">
-           <a href="{{ item.get_absolute_url }}" class="btn btn-sm btn-info text-white" title="Ver detalle"><i class="bi bi-eye"></i> Ver detalle</a>
-           <a href="{% url 'grupo-delete' item.id %}" class="btn btn-sm btn-outline-danger ms-1" title="Eliminar"><i class="bi bi-trash"></i></a>
-       </td>
+                <td><a href="{% url 'grupo-clave-detail' item.clave %}" class="text-success-custom fw-bold text-decoration-none">{{ item.clave }}</a></td>
+                <td>{{ item.num_materias }} materias</td>
+                <td>{{ item.cupo }}</td>
+                <td class="text-center">
+                    <a href="{% url 'grupo-clave-detail' item.clave %}" class="btn btn-sm btn-info text-white" title="Ver Materias"><i class="bi bi-eye"></i> Ver Materias</a>
+                    <a href="{% url 'grupo-update-masivo' item.clave %}" class="btn btn-sm btn-outline-warning ms-1" title="Editar Materias"><i class="bi bi-pencil"></i></a>
+                    <a href="{% url 'grupo-delete-masivo' item.clave %}" class="btn btn-sm btn-outline-danger ms-1" title="Eliminar Grupo"><i class="bi bi-trash"></i></a>
+                </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="100%" class="text-center py-4 text-muted">No hay registros disponibles.</td>
+                <td colspan="100%" class="text-center py-4 text-muted">No hay grupos registrados.</td>
             </tr>
             {% endfor %}
         </tbody>

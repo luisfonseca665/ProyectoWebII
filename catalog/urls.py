@@ -6,6 +6,7 @@ urlpatterns = [
     # Autenticación
     path('login/', LoginView.as_view(template_name='login.html'), name='login'),
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
+    path('usuarios/nuevo/', views.UsuarioCreateView.as_view(), name='usuario-create'),
 
     path('', views.HomeView.as_view(), name='home'),
     
@@ -33,7 +34,6 @@ urlpatterns = [
     path('alumnos/<str:pk>/editar/', views.AlumnoUpdateView.as_view(), name='alumno-update'),
     path('alumnos/<str:pk>/eliminar/', views.AlumnoDeleteView.as_view(), name='alumno-delete'),
     path('alumnos/<str:pk>/exportar-kardex/', views.exportar_kardex_excel, name='alumno-exportar-kardex'),
-    path('alumnos/<str:pk>/actualizar-calificaciones/', views.actualizar_calificaciones, name='alumno-actualizar-calificaciones'),
 
     path('profesores/', views.ProfesorListView.as_view(), name='profesores'),
     path('profesores/nuevo/', views.ProfesorCreateView.as_view(), name='profesor-create'),
@@ -43,9 +43,11 @@ urlpatterns = [
 
     path('grupos/', views.GrupoListView.as_view(), name='grupos'),
     path('grupos/nuevo/', views.GrupoCreateView.as_view(), name='grupo-create'),
-    path('grupos/<int:pk>/', views.GrupoDetailView.as_view(), name='grupo-detail'),
-    path('grupos/<int:pk>/editar/', views.GrupoUpdateView.as_view(), name='grupo-update'),
-    path('grupos/<int:pk>/eliminar/', views.GrupoDeleteView.as_view(), name='grupo-delete'),
+    path('grupos/<str:clave>/', views.GrupoClaveDetailView.as_view(), name='grupo-clave-detail'),
+    path('grupos/<str:clave>/editar-materias/', views.GrupoMasivoUpdateView.as_view(), name='grupo-update-masivo'),
+    path('grupos/<str:clave>/eliminar/', views.GrupoMasivoDeleteView.as_view(), name='grupo-delete-masivo'),
+    
+    path('grupo-materia/<int:pk>/editar/', views.GrupoUpdateView.as_view(), name='grupo-update'),
     path('mis-grupos/', views.MisGruposView.as_view(), name='mis-grupos'),
     path('grupo/<int:pk>/calificaciones/', views.CapturarCalificacionesView.as_view(), name='capturar-calificaciones'),
 ]

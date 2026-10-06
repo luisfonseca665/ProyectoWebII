@@ -60,13 +60,19 @@
                   </a>
                   <ul class="dropdown-menu">
                     <li><a class="dropdown-item" href="{% url 'alumnos' %}">Alumnos</a></li>
-                    <li><a class="dropdown-item" href="{% url 'profesores' %}">Profesores</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="{% url 'carreras' %}">Carreras</a></li>
-                    <li><a class="dropdown-item" href="{% url 'materias' %}">Materias</a></li>
-                    <li><a class="dropdown-item" href="{% url 'grupos' %}">Grupos</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="{% url 'grupos' %}">Crear usuario</a></li>
+                    
+                    {% if request.user.is_superuser or request.user.groups.all.0.name == 'Administrador' %}
+                        <li><a class="dropdown-item" href="{% url 'profesores' %}">Profesores</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'carreras' %}">Carreras</a></li>
+                        <li><a class="dropdown-item" href="{% url 'materias' %}">Materias</a></li>
+                    {% endif %}
+
+                    {% if request.user.is_superuser or request.user.groups.all.0.name == 'Coordinador' %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'grupos' %}">Grupos</a></li>
+                    {% endif %}
+
                   </ul>
                 </li>
                 {% endif %}
@@ -99,6 +105,17 @@
 
     <!-- Main Content -->
     <div class="container mt-4 mb-5">
+        <!-- Mensajes globales del sistema (Alertas, Éxito, Errores) -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm" role="alert">
+                    {% if message.tags == 'error' %}<i class="bi bi-exclamation-triangle-fill me-2"></i>{% elif message.tags == 'success' %}<i class="bi bi-check-circle-fill me-2"></i>{% elif message.tags == 'warning' %}<i class="bi bi-exclamation-circle-fill me-2"></i>{% endif %}
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
         {% block content %}
         {% endblock %}
     </div>

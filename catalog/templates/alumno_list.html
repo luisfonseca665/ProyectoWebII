@@ -24,6 +24,12 @@
        <td><span class="badge text-bg-light border">{{ item.promedio|floatformat:2|default:"N/A" }}</span></td>
        <td class="text-center">
            <a href="{{ item.get_absolute_url }}" class="btn btn-sm btn-info text-white" title="Ver detalle"><i class="bi bi-eye"></i> Ver detalle</a>
+           
+           {% if request.user.groups.all.0.name == 'Coordinador' or request.user.is_superuser %}
+           <a href="{% url 'carga-academica-coordinador' item.matricula %}" class="btn btn-sm btn-outline-success ms-1" title="Carga Académica"><i class="bi bi-book"></i> Carga</a>
+           {% endif %}
+
+           <a href="{% url 'alumno-update' item.matricula %}" class="btn btn-sm btn-outline-warning ms-1" title="Editar"><i class="bi bi-pencil"></i></a>
            <a href="{% url 'alumno-delete' item.matricula %}" class="btn btn-sm btn-outline-danger ms-1" title="Eliminar"><i class="bi bi-trash"></i></a>
        </td>
             </tr>

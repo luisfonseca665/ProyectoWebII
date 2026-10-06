@@ -22,6 +22,7 @@
        <td>{{ item.duracion }}</td>
        <td class="text-center">
            <a href="{{ item.get_absolute_url }}" class="btn btn-sm btn-info text-white" title="Ver detalle"><i class="bi bi-eye"></i> Ver detalle</a>
+           <a href="{% url 'carrera-update' item.id %}" class="btn btn-sm btn-outline-warning ms-1" title="Editar"><i class="bi bi-pencil"></i></a>
            <a href="{% url 'carrera-delete' item.id %}" class="btn btn-sm btn-outline-danger ms-1" title="Eliminar"><i class="bi bi-trash"></i></a>
        </td>
             </tr>

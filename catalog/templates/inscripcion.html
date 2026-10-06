@@ -3,9 +3,16 @@
 {% block title %}Inscripción de Materias - SICE{% endblock %}
 
 {% block content %}
-<div class="mb-4 border-bottom pb-2">
-    <h2 class="text-success-custom fw-bold"><i class="bi bi-ui-checks"></i> Selección de Grupos</h2>
-    <p class="text-muted">Alumno: <strong>{{ alumno.nombre }} {{ alumno.apellidos }}</strong> | Matrícula: <strong>{{ alumno.matricula }}</strong></p>
+<div class="mb-4 border-bottom pb-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h2 class="text-success-custom fw-bold mb-1"><i class="bi bi-ui-checks"></i> Selección de Grupos</h2>
+        <p class="text-muted mb-0">Alumno: <strong>{{ alumno.nombre }} {{ alumno.apellidos }}</strong> | Matrícula: <strong>{{ alumno.matricula }}</strong></p>
+    </div>
+    <div class="d-flex gap-2">
+        <span class="badge bg-light text-dark border p-2"><i class="bi bi-bookmark-check text-primary"></i> Inscritos: <strong>{{ creditos_actuales }}</strong> créditos</span>
+        <span class="badge bg-light text-dark border p-2"><i class="bi bi-plus-circle text-success"></i> Disponibles: <strong>{{ creditos_disponibles }}</strong> créditos</span>
+        <span class="badge bg-success p-2">Máximo: 36 créditos</span>
+    </div>
 </div>
 
 <form method="POST">
@@ -21,6 +28,7 @@
                         <tr>
                             <th class="ps-4">Inscribir</th>
                             <th>Materia</th>
+                            <th class="text-center">Créditos</th>
                             <th>Grupo</th>
                             <th>Profesor</th>
                             <th>Horario</th>
@@ -44,6 +52,7 @@
                                     {{ grupo.materia.nombre }}
                                 </label>
                             </td>
+                            <td class="text-center fw-bold">{{ grupo.materia.creditos }}</td>
                             <td>{{ grupo.clave }}</td>
                             <td>{{ grupo.profesor|default:"<span class='text-muted fst-italic'>Pendiente</span>"|safe }}</td>
                             <td>{{ grupo.horario }}</td>
@@ -59,7 +68,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">
+                            <td colspan="7" class="text-center py-4 text-muted">
                                 No hay grupos abiertos para tu carrera en este momento.
                             </td>
                         </tr>

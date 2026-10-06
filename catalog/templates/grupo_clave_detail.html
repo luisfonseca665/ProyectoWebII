@@ -1,0 +1,52 @@
+{% extends "pagina_maestra.html" %}
+{% block title %}Materias del Grupo {{ clave }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="text-success-custom fw-bold">
+        <a href="{% url 'grupos' %}" class="text-decoration-none text-secondary me-2"><i class="bi bi-arrow-left"></i></a>
+        Materias del Grupo {{ clave }}
+    </h2>
+    <div>
+        <a href="{% url 'grupo-update-masivo' clave %}" class="btn btn-warning"><i class="bi bi-pencil me-1"></i> Modificar Materias del Grupo</a>
+    </div>
+</div>
+
+<div class="table-responsive bg-white rounded shadow-sm p-2">
+    <table class="table table-hover align-middle mb-0">
+        <thead class="table-success">
+            <tr>
+                <th>Materia</th>
+                <th>Profesor Asignado</th>
+                <th>Horario</th>
+                <th>Alumnos Inscritos</th>
+                <th class="text-center">Operaciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in materias_grupo %}
+            <tr>
+                <td class="fw-bold">{{ item.materia.nombre }}</td>
+                <td>{{ item.profesor|default:"<span class='text-muted fst-italic'>Sin asignar</span>"|safe }}</td>
+                <td>
+                    {% if item.horario == 'Por asignar' %}
+                        <span class="text-warning"><i class="bi bi-clock-history"></i> Por asignar</span>
+                    {% else %}
+                        {{ item.horario }}
+                    {% endif %}
+                </td>
+                <td>{{ item.numAlumnos }} / {{ item.cupo }}</td>
+                <td class="text-center">
+                    <a href="{% url 'grupo-update' item.id %}" class="btn btn-sm btn-outline-primary" title="Asignar Profesor u Horario">
+                        <i class="bi bi-person-plus"></i> Asignar Prof/Horario
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="100%" class="text-center py-4 text-muted">Este grupo no tiene materias asignadas.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
