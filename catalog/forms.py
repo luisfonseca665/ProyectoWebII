@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User
 from .models import Carrera, Materia, Alumno, Profesor, Grupo, Perfil
 
 
@@ -33,7 +33,7 @@ class RegistroUsuarioForm(forms.ModelForm):
     def save(self, commit=True):
         """
         Sobrescribimos el guardado normal para encriptar la contraseña y 
-        asignarle de paso su perfil y sus permisos de grupo en Django.
+        asignarle de paso su perfil.
         """
         user = super().save(commit=False)
         user.set_password(self.cleaned_data['password'])
@@ -44,9 +44,6 @@ class RegistroUsuarioForm(forms.ModelForm):
             perfil, _ = Perfil.objects.get_or_create(usuario=user)
             perfil.rol = rol_name
             perfil.save()
-            # Asignar grupo de django
-            grupo, _ = Group.objects.get_or_create(name=rol_name)
-            user.groups.add(grupo)
         return user
 
 
@@ -149,6 +146,16 @@ class ProfesorUpdateForm(forms.ModelForm):
             'estatus': forms.Select(attrs={'class': 'form-select'}),
         }
 
+
+class CambiarPasswordAlumnoForm(forms.Form):
+    """
+    Formulario simple para que Control Escolar pueda cambiarle la contraseña a un alumno.
+    """
+    nueva_password = forms.CharField(
+        label="Nueva Contraseña",
+        required=True,
+        widget=forms.PasswordInput(attrs={'class': 'form-control'})
+    )
 
 class AlumnoCleanMixin:
     """

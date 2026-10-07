@@ -6,17 +6,19 @@ from django.core.exceptions import ValidationError
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.http import HttpResponse
-from django.views.generic import TemplateView, ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import TemplateView, ListView, DetailView, CreateView, UpdateView, DeleteView, View
+from django.views.generic.edit import FormView
 from .models import Carrera, Materia, Alumno, Profesor, Grupo, Calificacion, Perfil
 from django.db.models import Avg, Count, Sum
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User
 from .forms import (
     RegistroUsuarioForm, CarreraForm, MateriaForm,
     ProfesorCreateForm, ProfesorUpdateForm,
-    AlumnoCreateForm, AlumnoUpdateForm, GrupoForm, GrupoMultiForm
+    AlumnoCreateForm, AlumnoUpdateForm, GrupoForm, GrupoMultiForm,
+    CambiarPasswordAlumnoForm
 )
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
@@ -24,25 +26,32 @@ from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 # --- MIXINS DE ROLES ---
 # Estos "mixins" son como los guardias de seguridad: revisan qué rol tienes antes 
 # de dejarte entrar a una vista. Si no tienes permisos, te regresan.
+# Hemos optimizado esta parte para dejar de usar los Grupos Nativos de Django 
+# y usar directamente nuestro modelo Perfil, lo cual hace el código más ligero y directo.
 class AdminRequiredMixin(UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.groups.filter(name='Administrador').exists() or self.request.user.is_superuser
+        user = self.request.user
+        return user.is_superuser or (hasattr(user, 'perfil') and user.perfil.rol == 'Administrador')
 
 class CoordinadorRequiredMixin(UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.groups.filter(name='Coordinador').exists() or self.request.user.is_superuser
+        user = self.request.user
+        return user.is_superuser or (hasattr(user, 'perfil') and user.perfil.rol == 'Coordinador')
 
 class AdminOrCoordinadorRequiredMixin(UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.groups.filter(name__in=['Administrador', 'Coordinador']).exists() or self.request.user.is_superuser
+        user = self.request.user
+        return user.is_superuser or (hasattr(user, 'perfil') and user.perfil.rol in ['Administrador', 'Coordinador'])
 
 class EstudianteRequiredMixin(UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.groups.filter(name='Estudiante').exists()
+        user = self.request.user
+        return hasattr(user, 'perfil') and user.perfil.rol == 'ALUMNO'
 
 class ProfesorRequiredMixin(UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.groups.filter(name='Profesor').exists() or self.request.user.is_superuser
+        user = self.request.user
+        return user.is_superuser or (hasattr(user, 'perfil') and user.perfil.rol == 'PROFESOR')
 
 # --- VISTAS EN GENERAL ---
 
@@ -85,9 +94,6 @@ def sincronizar_usuario_profesor(profesor):
     perfil.rol = 'PROFESOR'
     perfil.save()
     
-    grupo, _ = Group.objects.get_or_create(name='Profesor')
-    user.groups.add(grupo)
-    
     if profesor.usuario != user:
         profesor.usuario = user
         profesor.save(update_fields=['usuario'])
@@ -99,7 +105,7 @@ def sincronizar_usuario_alumno(alumno):
         'last_name': alumno.apellidos,
     })
     if created:
-        user.set_password('Alumno123!')
+        user.set_password(alumno.matricula)
         user.save()
     else:
         user.first_name = alumno.nombre
@@ -109,9 +115,6 @@ def sincronizar_usuario_alumno(alumno):
     perfil, _ = Perfil.objects.get_or_create(usuario=user)
     perfil.rol = 'ALUMNO'
     perfil.save()
-    
-    grupo, _ = Group.objects.get_or_create(name='Estudiante')
-    user.groups.add(grupo)
     
     if alumno.usuario != user:
         alumno.usuario = user
@@ -236,6 +239,30 @@ class AlumnoDeleteView(LoginRequiredMixin, AdminOrCoordinadorRequiredMixin, Dele
     success_url = reverse_lazy('alumnos')
     template_name = 'confirm_delete.html'
 
+class CambiarPasswordAlumnoView(LoginRequiredMixin, AdminRequiredMixin, FormView):
+    """
+    Vista para que Control Escolar (Administrador) le cambie la contraseña a un alumno.
+    """
+    template_name = 'form_generico.html'
+    form_class = CambiarPasswordAlumnoForm
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        # Hack para mostrar el título en form_generico
+        ctx['form'].instance = get_object_or_404(Alumno, matricula=self.kwargs['pk'])
+        return ctx
+
+    def form_valid(self, form):
+        alumno = get_object_or_404(Alumno, matricula=self.kwargs['pk'])
+        nueva_pass = form.cleaned_data['nueva_password']
+        if alumno.usuario:
+            alumno.usuario.set_password(nueva_pass)
+            alumno.usuario.save()
+            messages.success(self.request, f"Contraseña actualizada para {alumno.matricula}.")
+        else:
+            messages.error(self.request, "El alumno no tiene un usuario asignado.")
+        return redirect('alumno-detail', pk=alumno.matricula)
+
 # --- PROFESOR ---
 class ProfesorListView(LoginRequiredMixin, ListView):
     model = Profesor
@@ -283,11 +310,11 @@ class GrupoListView(LoginRequiredMixin, ListView):
     context_object_name = 'grupos_agrupados'
 
     def get_queryset(self):
-        claves = Grupo.objects.values('clave').distinct().order_by('clave')
+        claves = Grupo.objects.filter(activo=True).values('clave').distinct().order_by('clave')
         grupos_agrupados = []
         for c in claves:
             clave = c['clave']
-            grupos = Grupo.objects.filter(clave=clave)
+            grupos = Grupo.objects.filter(clave=clave, activo=True)
             cupo = grupos.first().cupo if grupos.exists() else 0
             grupos_agrupados.append({
                 'clave': clave,
@@ -302,7 +329,7 @@ class GrupoClaveDetailView(LoginRequiredMixin, CoordinadorRequiredMixin, ListVie
     context_object_name = 'materias_grupo'
     
     def get_queryset(self):
-        return Grupo.objects.filter(clave=self.kwargs['clave']).select_related('materia', 'profesor')
+        return Grupo.objects.filter(clave=self.kwargs['clave'], activo=True).select_related('materia', 'profesor')
         
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -310,6 +337,7 @@ class GrupoClaveDetailView(LoginRequiredMixin, CoordinadorRequiredMixin, ListVie
         return ctx
 
 from django.views.generic.edit import FormView
+
 class GrupoCreateView(LoginRequiredMixin, CoordinadorRequiredMixin, FormView):
     """Permite crear masivamente las materias de una clave de grupo."""
     template_name = 'form_generico.html'
@@ -360,10 +388,14 @@ class GrupoMasivoUpdateView(LoginRequiredMixin, CoordinadorRequiredMixin, FormVi
         # Actualizar o eliminar existentes
         for grupo in grupos_actuales:
             if grupo.materia_id not in nuevas_materias_ids:
-                grupo.delete()
+                # Borrado lógico
+                grupo.activo = False
+                grupo.save()
             else:
                 grupo.clave = nueva_clave
                 grupo.cupo = nuevo_cupo
+                # Si estaba dado de baja y lo vuelven a seleccionar
+                grupo.activo = True
                 grupo.save()
                 
         # Crear nuevas asignaciones
@@ -385,12 +417,12 @@ class GrupoMasivoDeleteView(LoginRequiredMixin, CoordinadorRequiredMixin, Delete
     success_url = reverse_lazy('grupos')
 
     def get_object(self):
-        return Grupo.objects.filter(clave=self.kwargs['clave']).first() # Se usa uno para la confirmación genérica
+        return Grupo.objects.filter(clave=self.kwargs['clave'], activo=True).first() # Se usa uno para la confirmación genérica
 
     def form_valid(self, form):
         clave = self.kwargs['clave']
-        Grupo.objects.filter(clave=clave).delete()
-        messages.success(self.request, f"Grupo '{clave}' y todas sus materias han sido eliminados.")
+        Grupo.objects.filter(clave=clave).update(activo=False) # Borrado lógico
+        messages.success(self.request, f"Grupo '{clave}' y todas sus materias han sido eliminados lógicamente.")
         return redirect(self.success_url)
 
 class GrupoUpdateView(LoginRequiredMixin, CoordinadorRequiredMixin, UpdateView):
@@ -409,17 +441,38 @@ class GrupoUpdateView(LoginRequiredMixin, CoordinadorRequiredMixin, UpdateView):
 
 # - CARGA ACADÉMICA E INSCRIPCIÓN ---
 
+class DarDeBajaMateriaView(LoginRequiredMixin, CoordinadorRequiredMixin, View):
+    """
+    Permite a un coordinador dar de baja una materia específica del alumno 
+    (solo si no ha sido calificada todavía).
+    """
+    def post(self, request, pk):
+        calificacion = get_object_or_404(Calificacion, pk=pk)
+        matricula = calificacion.alumno.matricula
+        
+        if calificacion.calificacion_final is None:
+            grupo = calificacion.grupo
+            calificacion.delete()
+            # Actualizar cupo
+            grupo.numAlumnos = grupo.calificacion_set.count()
+            grupo.save()
+            messages.success(request, "La materia ha sido dada de baja correctamente.")
+        else:
+            messages.error(request, "No se puede dar de baja una materia que ya tiene calificación final.")
+            
+        return redirect('carga-academica-coordinador', matricula=matricula)
+
 class CargaAcademicaView(LoginRequiredMixin, ListView):
     model = Calificacion
     template_name = 'carga_academica.html'
     context_object_name = 'inscripciones'
 
     def get_queryset(self):
-        if self.request.user.groups.filter(name='Estudiante').exists():
+        if hasattr(self.request.user, 'perfil') and self.request.user.perfil.rol == 'ALUMNO':
             return Calificacion.objects.filter(alumno__usuario=self.request.user, calificacion_final__isnull=True)
         
         matricula = self.kwargs.get('matricula')
-        if matricula and self.request.user.groups.filter(name='Coordinador').exists():
+        if matricula and (hasattr(self.request.user, 'perfil') and self.request.user.perfil.rol == 'Coordinador'):
             return Calificacion.objects.filter(alumno__matricula=matricula, calificacion_final__isnull=True)
         
         return Calificacion.objects.none()
@@ -433,7 +486,7 @@ class InscripcionMateriasView(LoginRequiredMixin, TemplateView):
     template_name = 'inscripcion.html'
 
     def dispatch(self, request, *args, **kwargs):
-        if request.user.groups.filter(name='Estudiante').exists():
+        if (hasattr(request.user, 'perfil') and request.user.perfil.rol == 'ALUMNO'):
             self.alumno = get_object_or_404(Alumno, usuario=request.user)
 
             creditos_actuales = Calificacion.objects.filter(
@@ -444,7 +497,7 @@ class InscripcionMateriasView(LoginRequiredMixin, TemplateView):
                 messages.warning(request, "Ya alcanzaste el límite de créditos.")
                 return redirect('carga-academica')
                 
-        elif request.user.groups.filter(name='Coordinador').exists():
+        elif (hasattr(request.user, 'perfil') and request.user.perfil.rol == 'Coordinador'):
             matricula = self.kwargs.get('matricula')
             self.alumno = get_object_or_404(Alumno, matricula=matricula)
         else:
@@ -462,7 +515,8 @@ class InscripcionMateriasView(LoginRequiredMixin, TemplateView):
         ).exclude(calificacion_final__lt=70).values_list('grupo__materia_id', flat=True)
 
         context['grupos_disponibles'] = Grupo.objects.filter(
-            materia__carrera=self.alumno.carrera
+            materia__carrera=self.alumno.carrera,
+            activo=True
         ).exclude(materia_id__in=materias_bloqueadas).select_related('materia', 'profesor')
         
         creditos_actuales = Calificacion.objects.filter(
@@ -478,7 +532,7 @@ class InscripcionMateriasView(LoginRequiredMixin, TemplateView):
         grupos_ids = request.POST.getlist('grupos')
         if not grupos_ids:
             messages.warning(request, "No seleccionaste ningún grupo.")
-            if request.user.groups.filter(name='Estudiante').exists():
+            if (hasattr(request.user, 'perfil') and request.user.perfil.rol == 'ALUMNO'):
                 return redirect('inscripcion-estudiante')
             return redirect('inscripcion-coordinador', matricula=self.alumno.matricula)
 
@@ -488,7 +542,7 @@ class InscripcionMateriasView(LoginRequiredMixin, TemplateView):
         materias_ids = [g.materia_id for g in grupos_seleccionados]
         if len(materias_ids) != len(set(materias_ids)):
             messages.error(request, "No puedes inscribir más de un grupo para la misma materia.")
-            if request.user.groups.filter(name='Estudiante').exists():
+            if (hasattr(request.user, 'perfil') and request.user.perfil.rol == 'ALUMNO'):
                 return redirect('inscripcion-estudiante')
             return redirect('inscripcion-coordinador', matricula=self.alumno.matricula)
 
@@ -506,7 +560,7 @@ class InscripcionMateriasView(LoginRequiredMixin, TemplateView):
                 f"La selección excede el límite máximo de créditos. "
                 f"Puedes meter un máximo de {creditos_totales} créditos."
             )
-            if request.user.groups.filter(name='Estudiante').exists():
+            if (hasattr(request.user, 'perfil') and request.user.perfil.rol == 'ALUMNO'):
                 return redirect('inscripcion-estudiante')
             return redirect('inscripcion-coordinador', matricula=self.alumno.matricula)
 
@@ -521,7 +575,7 @@ class InscripcionMateriasView(LoginRequiredMixin, TemplateView):
                 messages.warning(request, f"El grupo {grupo.clave} de {grupo.materia.nombre} ya no cuenta con cupo.")
 
         messages.success(request, f"Inscripción realizada con éxito. Has registrado {creditos_nuevos} créditos (Total actual: {creditos_totales} créditos).")
-        if request.user.groups.filter(name='Estudiante').exists():
+        if (hasattr(request.user, 'perfil') and request.user.perfil.rol == 'ALUMNO'):
             return redirect('carga-academica')
         return redirect('carga-academica-coordinador', matricula=self.alumno.matricula)
 
@@ -533,7 +587,12 @@ def exportar_kardex_excel(request, pk):
     para que Control Escolar o los coordinadores puedan descargarlo y tenerlo en físico/digital.
     """
     alumno = get_object_or_404(Alumno, pk=pk)
-    calificaciones = Calificacion.objects.filter(alumno=alumno).select_related('grupo__materia', 'grupo__profesor')
+    # Solo mostrar calificaciones mayor a 0 (ya que con 0 se asume que apenas las está cursando)
+    calificaciones = Calificacion.objects.filter(
+        alumno=alumno, 
+        calificacion_final__gt=0, 
+        calificacion_final__isnull=False
+    ).select_related('grupo__materia', 'grupo__profesor')
 
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -671,7 +730,7 @@ class MisGruposView(LoginRequiredMixin, ProfesorRequiredMixin, ListView):
     context_object_name = 'grupos'
 
     def get_queryset(self):
-        return Grupo.objects.filter(profesor__usuario=self.request.user)
+        return Grupo.objects.filter(profesor__usuario=self.request.user, activo=True)
 
 class CapturarCalificacionesView(LoginRequiredMixin, ProfesorRequiredMixin, DetailView):
     """

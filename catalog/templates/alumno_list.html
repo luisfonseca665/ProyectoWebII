@@ -25,7 +25,7 @@
        <td class="text-center">
            <a href="{{ item.get_absolute_url }}" class="btn btn-sm btn-info text-white" title="Ver detalle"><i class="bi bi-eye"></i> Ver detalle</a>
            
-           {% if request.user.groups.all.0.name == 'Coordinador' or request.user.is_superuser %}
+           {% if request.user.perfil.rol == 'Coordinador' or request.user.is_superuser %}
            <a href="{% url 'carga-academica-coordinador' item.matricula %}" class="btn btn-sm btn-outline-success ms-1" title="Carga Académica"><i class="bi bi-book"></i> Carga</a>
            {% endif %}
 

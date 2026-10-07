@@ -13,6 +13,7 @@ urlpatterns = [
     # Rutas para la carga academica y la inscripcion
     path('mi-carga/', views.CargaAcademicaView.as_view(), name='carga-academica'),
     path('carga/<str:matricula>/', views.CargaAcademicaView.as_view(), name='carga-academica-coordinador'),
+    path('carga/baja/<int:pk>/', views.DarDeBajaMateriaView.as_view(), name='dar-de-baja-materia'),
     path('inscripcion/', views.InscripcionMateriasView.as_view(), name='inscripcion-estudiante'),
     path('inscripcion/<str:matricula>/', views.InscripcionMateriasView.as_view(), name='inscripcion-coordinador'),
 
@@ -37,6 +38,7 @@ urlpatterns = [
     path('alumnos/<str:pk>/editar/', views.AlumnoUpdateView.as_view(), name='alumno-update'),
     path('alumnos/<str:pk>/eliminar/', views.AlumnoDeleteView.as_view(), name='alumno-delete'),
     path('alumnos/<str:pk>/exportar-kardex/', views.exportar_kardex_excel, name='alumno-exportar-kardex'),
+    path('alumnos/<str:pk>/cambiar-password/', views.CambiarPasswordAlumnoView.as_view(), name='alumno-cambiar-password'),
 
     # Rutas para los profesores 
     path('profesores/', views.ProfesorListView.as_view(), name='profesores'),
@@ -45,7 +47,7 @@ urlpatterns = [
     path('profesores/<str:pk>/editar/', views.ProfesorUpdateView.as_view(), name='profesor-update'),
     path('profesores/<str:pk>/eliminar/', views.ProfesorDeleteView.as_view(), name='profesor-delete'),
 
-    # Rutas para los profesores
+    # Rutas para los grupos
     path('grupos/', views.GrupoListView.as_view(), name='grupos'),
     path('grupos/nuevo/', views.GrupoCreateView.as_view(), name='grupo-create'),
     path('grupos/<str:clave>/', views.GrupoClaveDetailView.as_view(), name='grupo-clave-detail'),

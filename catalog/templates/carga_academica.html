@@ -7,11 +7,11 @@
     <h2 class="text-success-custom fw-bold"><i class="bi bi-book"></i> Carga Académica</h2>
     
     <!-- Botón de inscripción exclusivo para estudiantes -->
-    {% if request.user.groups.all.0.name == 'Estudiante' %}
+    {% if request.user.perfil.rol == 'ALUMNO' %}
         <a href="{% url 'inscripcion-estudiante' %}" class="btn btn-outline-success">
             <i class="bi bi-plus-circle"></i> Inscribir Materias
         </a>
-    {% elif request.user.groups.all.0.name == 'Coordinador' %}
+    {% elif request.user.perfil.rol == 'Coordinador' %}
         <a href="{% url 'inscripcion-coordinador' view.kwargs.matricula %}" class="btn btn-outline-success">
             <i class="bi bi-plus-circle"></i> Inscribir Materias (Coordinador)
         </a>
@@ -29,6 +29,9 @@
                     <th>Profesor</th>
                     <th>Horario</th>
                     <th>Créditos</th>
+                    {% if request.user.perfil.rol == 'Coordinador' %}
+                    <th>Acciones</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -40,6 +43,14 @@
                     <td>{{ inscripcion.grupo.profesor|default:"Sin asignar" }}</td>
                     <td>{{ inscripcion.grupo.horario }}</td>
                     <td class="text-center">{{ inscripcion.grupo.materia.creditos }}</td>
+                    {% if request.user.perfil.rol == 'Coordinador' %}
+                    <td>
+                        <form action="{% url 'dar-de-baja-materia' inscripcion.id %}" method="POST" class="d-inline" onsubmit="return confirm('¿Seguro que deseas dar de baja al alumno de esta materia?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger" title="Dar de baja"><i class="bi bi-trash"></i> Dar de baja</button>
+                        </form>
+                    </td>
+                    {% endif %}
                 </tr>
                 {% empty %}
                 <tr>

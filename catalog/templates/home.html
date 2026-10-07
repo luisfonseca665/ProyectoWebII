@@ -8,7 +8,7 @@
     <p class="text-muted fs-6 mb-0">Bienvenido al panel de inicio.</p>
 </div>
 
-{% if request.user.groups.all.0.name == 'Administrador' or request.user.is_superuser %}
+{% if request.user.perfil.rol == 'Administrador' or request.user.is_superuser %}
     <div class="mb-4">
         <a href="{% url 'usuario-create' %}" class="btn btn-success"><i class="bi bi-person-plus-fill me-2"></i>Registrar Usuario (Administrativo/Coordinador)</a>
     </div>
@@ -16,14 +16,14 @@
 
 <div class="row text-center mt-4">
     
-    {% if request.user.groups.all.0.name == 'Estudiante' %}
+    {% if request.user.perfil.rol == 'ALUMNO' %}
         <!-- Alumno Dashboard -->
         <div class="col-12 text-start">
             <h5 class="fw-bold text-success-custom mb-3">Tu Carga Académica</h5>
             <p>Revisa las materias en las que estás inscrito actualmente o inscribe nuevas asignaturas si es periodo de registro.</p>
             <a href="{% url 'carga-academica' %}" class="btn btn-outline-success">Ver mi Carga Académica</a>
         </div>
-    {% elif request.user.groups.all.0.name == 'Profesor' %}
+    {% elif request.user.perfil.rol == 'PROFESOR' %}
         <!-- Profesor Dashboard -->
          <div class="col-12 text-start">
             <h5 class="fw-bold text-success-custom mb-3">Tus Grupos Asignados</h5>
@@ -43,7 +43,7 @@
             </div>
         </div>
 
-        {% if request.user.groups.all.0.name == 'Administrador' or request.user.is_superuser %}
+        {% if request.user.perfil.rol == 'Administrador' or request.user.is_superuser %}
         <div class="col-md-3 mb-3">
             <div class="card bg-white shadow-sm" style="border: 1px solid #000;">
                 <div class="card-header bg-white fw-bold text-success-custom border-bottom" style="border-color: #000 !important;">Profesores Activos</div>
@@ -73,7 +73,7 @@
         </div>
         {% endif %}
 
-        {% if request.user.groups.all.0.name == 'Coordinador' %}
+        {% if request.user.perfil.rol == 'Coordinador' %}
         <div class="col-md-3 mb-3">
             <div class="card bg-white shadow-sm" style="border: 1px solid #000;">
                 <div class="card-header bg-white fw-bold text-success-custom border-bottom" style="border-color: #000 !important;">Grupos Creados</div>

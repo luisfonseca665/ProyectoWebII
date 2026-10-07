@@ -23,6 +23,11 @@
 <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
     <h4 class="text-success-custom fw-bold mb-0">Kardex / Calificaciones</h4>
     <div>
+        {% if request.user.is_superuser or request.user.perfil.rol == 'Administrador' %}
+        <a href="{% url 'alumno-cambiar-password' object.matricula %}" class="btn btn-secondary btn-sm me-2">
+            <i class="bi bi-key-fill me-1"></i> Cambiar Contraseña
+        </a>
+        {% endif %}
         <a href="{% url 'alumno-exportar-kardex' object.matricula %}" class="btn btn-success btn-sm">
             <i class="bi bi-file-earmark-excel-fill me-1"></i> Descargar reporte
         </a>
@@ -46,11 +51,11 @@
             {% for cal in calificaciones %}
             <tr data-calificacion-id="{{ cal.id }}">
                 <td>{{ cal.grupo.materia.codigo }}</td>
-                <td><a href="{{ cal.grupo.materia.get_absolute_url }}" class="text-success-custom text-decoration-none fw-bold">{{ cal.grupo.materia.nombre }}</a></td>
-                <td><a href="{{ cal.grupo.get_absolute_url }}" class="text-success-custom text-decoration-none">{{ cal.grupo.clave }}</a></td>
+                <td><span class="text-success-custom text-decoration-none fw-bold">{{ cal.grupo.materia.nombre }}</span></td>   
+                <td><span class="text-success-custom text-decoration-none">{{ cal.grupo.clave }}</span></td>
                 <td>
                     {% if cal.grupo.profesor %}
-                        <a href="{{ cal.grupo.profesor.get_absolute_url }}" class="text-success-custom text-decoration-none">{{ cal.grupo.profesor }}</a>
+                        <span class="text-success-custom text-decoration-none">{{ cal.grupo.profesor }}</span>
                     {% else %}
                         -
                     {% endif %}

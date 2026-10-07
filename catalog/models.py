@@ -156,6 +156,7 @@ class Grupo(models.Model):
         help_text="Cantidad actual de alumnos inscritos"
     )
     horario = models.CharField(max_length=100)
+    activo = models.BooleanField(default=True, help_text="Para borrado lógico")
     
     alumnos = models.ManyToManyField(
         'Alumno', 
