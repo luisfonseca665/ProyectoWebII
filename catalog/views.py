@@ -31,17 +31,17 @@ from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 class AdminRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         user = self.request.user
-        return user.is_superuser or (hasattr(user, 'perfil') and user.perfil.rol == 'Administrador')
+        return user.is_superuser or (hasattr(user, 'perfil') and user.perfil.rol == 'CONTROL_ESCOLAR')
 
 class CoordinadorRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         user = self.request.user
-        return user.is_superuser or (hasattr(user, 'perfil') and user.perfil.rol == 'Coordinador')
+        return user.is_superuser or (hasattr(user, 'perfil') and user.perfil.rol == 'COORDINADOR')
 
 class AdminOrCoordinadorRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         user = self.request.user
-        return user.is_superuser or (hasattr(user, 'perfil') and user.perfil.rol in ['Administrador', 'Coordinador'])
+        return user.is_superuser or (hasattr(user, 'perfil') and user.perfil.rol in ['CONTROL_ESCOLAR', 'COORDINADOR'])
 
 class EstudianteRequiredMixin(UserPassesTestMixin):
     def test_func(self):
@@ -472,7 +472,7 @@ class CargaAcademicaView(LoginRequiredMixin, ListView):
             return Calificacion.objects.filter(alumno__usuario=self.request.user, calificacion_final__isnull=True)
         
         matricula = self.kwargs.get('matricula')
-        if matricula and (hasattr(self.request.user, 'perfil') and self.request.user.perfil.rol == 'Coordinador'):
+        if matricula and (hasattr(self.request.user, 'perfil') and self.request.user.perfil.rol == 'COORDINADOR'):
             return Calificacion.objects.filter(alumno__matricula=matricula, calificacion_final__isnull=True)
         
         return Calificacion.objects.none()
@@ -497,7 +497,7 @@ class InscripcionMateriasView(LoginRequiredMixin, TemplateView):
                 messages.warning(request, "Ya alcanzaste el límite de créditos.")
                 return redirect('carga-academica')
                 
-        elif (hasattr(request.user, 'perfil') and request.user.perfil.rol == 'Coordinador'):
+        elif (hasattr(request.user, 'perfil') and request.user.perfil.rol == 'COORDINADOR'):
             matricula = self.kwargs.get('matricula')
             self.alumno = get_object_or_404(Alumno, matricula=matricula)
         else:

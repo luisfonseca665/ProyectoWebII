@@ -53,7 +53,7 @@
                 {% endif %}
 
                 <!-- Opción visible solo para Administradores y Coordinadores -->
-                {% if request.user.is_superuser or request.user.perfil.rol == 'Administrador' or request.user.perfil.rol == 'Coordinador' %}
+                {% if request.user.is_superuser or request.user.perfil.rol == 'CONTROL_ESCOLAR' or request.user.perfil.rol == 'COORDINADOR' %}
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     Catálogos
@@ -61,14 +61,14 @@
                   <ul class="dropdown-menu">
                     <li><a class="dropdown-item" href="{% url 'alumnos' %}">Alumnos</a></li>
                     
-                    {% if request.user.is_superuser or request.user.perfil.rol == 'Administrador' %}
+                    {% if request.user.is_superuser or request.user.perfil.rol == 'CONTROL_ESCOLAR' %}
                         <li><a class="dropdown-item" href="{% url 'profesores' %}">Profesores</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{% url 'carreras' %}">Carreras</a></li>
                         <li><a class="dropdown-item" href="{% url 'materias' %}">Materias</a></li>
                     {% endif %}
 
-                    {% if request.user.is_superuser or request.user.perfil.rol == 'Coordinador' %}
+                    {% if request.user.is_superuser or request.user.perfil.rol == 'COORDINADOR' %}
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{% url 'grupos' %}">Grupos</a></li>
                     {% endif %}

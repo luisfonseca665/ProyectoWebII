@@ -9,7 +9,7 @@ class RegistroUsuarioForm(forms.ModelForm):
     para otros administradores o coordinadores. 
     """
     rol = forms.ChoiceField(
-        choices=[('Administrador', 'Control Escolar (Administrador)'), ('Coordinador', 'Coordinador')],
+        choices=[('CONTROL_ESCOLAR', 'Control Escolar (Administrador)'), ('COORDINADOR', 'Coordinador')],
         required=True, 
         label="Rol a asignar",
         widget=forms.Select(attrs={'class': 'form-select'})

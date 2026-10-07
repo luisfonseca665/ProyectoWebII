@@ -11,7 +11,7 @@
         <a href="{% url 'inscripcion-estudiante' %}" class="btn btn-outline-success">
             <i class="bi bi-plus-circle"></i> Inscribir Materias
         </a>
-    {% elif request.user.perfil.rol == 'Coordinador' %}
+    {% elif request.user.perfil.rol == 'COORDINADOR' %}
         <a href="{% url 'inscripcion-coordinador' view.kwargs.matricula %}" class="btn btn-outline-success">
             <i class="bi bi-plus-circle"></i> Inscribir Materias (Coordinador)
         </a>
@@ -29,7 +29,7 @@
                     <th>Profesor</th>
                     <th>Horario</th>
                     <th>Créditos</th>
-                    {% if request.user.perfil.rol == 'Coordinador' %}
+                    {% if request.user.perfil.rol == 'COORDINADOR' %}
                     <th>Acciones</th>
                     {% endif %}
                 </tr>
@@ -43,7 +43,7 @@
                     <td>{{ inscripcion.grupo.profesor|default:"Sin asignar" }}</td>
                     <td>{{ inscripcion.grupo.horario }}</td>
                     <td class="text-center">{{ inscripcion.grupo.materia.creditos }}</td>
-                    {% if request.user.perfil.rol == 'Coordinador' %}
+                    {% if request.user.perfil.rol == 'COORDINADOR' %}
                     <td>
                         <form action="{% url 'dar-de-baja-materia' inscripcion.id %}" method="POST" class="d-inline" onsubmit="return confirm('¿Seguro que deseas dar de baja al alumno de esta materia?');">
                             {% csrf_token %}
